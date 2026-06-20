@@ -1,32 +1,3 @@
-"""
-============================================================
- SUPERVISOR HMI - CONTROLE PID DE JUNTA ROBOTICA
-============================================================
-Le os dados enviados pelo Arduino via serial (CSV) e plota
-em tempo real: Setpoint, Posicao, Erro e Sinal de Controle (PWM).
-
-Requisitos:
-    pip install pyserial matplotlib --break-system-packages
-
-Como usar:
-    1. Conecte o Arduino e identifique a porta serial:
-         Windows:  algo como "COM3", "COM4"
-         Linux:    algo como "/dev/ttyUSB0", "/dev/ttyACM0"
-         Mac:      algo como "/dev/cu.usbserial-XXXX"
-    2. Ajuste a variavel PORTA_SERIAL abaixo
-    3. Execute: python hmi_pid.py
-    4. Digite comandos no terminal para enviar ao Arduino:
-         90      -> muda setpoint para 90 graus
-         P2.5    -> ajusta Kp
-         I4.0    -> ajusta Ki
-         D0.08   -> ajusta Kd
-         DIST    -> aplica disturbio virtual
-         R       -> reset
-         STATUS  -> mostra ganhos atuais
-         sair    -> fecha o programa
-============================================================
-"""
-
 import serial
 import serial.tools.list_ports
 import matplotlib.pyplot as plt
@@ -36,17 +7,13 @@ import threading
 import time
 import sys
 
-# ============================================================
 #  CONFIGURACAO
-# ============================================================
 PORTA_SERIAL = "COM3"        # AJUSTE AQUI para sua porta
 BAUD_RATE = 115200
 JANELA_AMOSTRAS = 300         # quantos pontos mostrar no grafico (300 * 10ms = 3s)
 TS_ESPERADO_MS = 10           # tempo de amostragem do firmware
 
-# ============================================================
 #  DETECCAO AUTOMATICA DE PORTA (auxiliar)
-# ============================================================
 def listar_portas_disponiveis():
     portas = serial.tools.list_ports.comports()
     if not portas:
@@ -58,9 +25,7 @@ def listar_portas_disponiveis():
     return [p.device for p in portas]
 
 
-# ============================================================
 #  BUFFERS DE DADOS (thread-safe via deque)
-# ============================================================
 tempo_buf = deque(maxlen=JANELA_AMOSTRAS)
 setpoint_buf = deque(maxlen=JANELA_AMOSTRAS)
 posicao_buf = deque(maxlen=JANELA_AMOSTRAS)
@@ -73,9 +38,7 @@ conexao_ok = False
 ultimo_status = ""
 
 
-# ============================================================
 #  THREAD DE LEITURA SERIAL
-# ============================================================
 def thread_leitura_serial(ser):
     global contador_amostras, conexao_ok, ultimo_status
 
@@ -125,9 +88,7 @@ def thread_leitura_serial(ser):
             pwm_buf.append(pwm)
 
 
-# ============================================================
 #  THREAD DE ENTRADA DE COMANDOS (terminal -> Arduino)
-# ============================================================
 def thread_comandos(ser):
     print("\nDigite comandos para enviar ao Arduino (ou 'sair' para encerrar):")
     print("  Exemplos: 90 | P2.5 | I4.0 | D0.08 | DIST | R | STATUS\n")
@@ -146,9 +107,7 @@ def thread_comandos(ser):
             ser.write((cmd + "\n").encode("utf-8"))
 
 
-# ============================================================
 #  CONFIGURACAO DOS GRAFICOS (4 subplots)
-# ============================================================
 def configurar_graficos():
     fig, axs = plt.subplots(4, 1, figsize=(10, 9), sharex=True)
     fig.suptitle("Supervisor HMI - Controle PID da Junta Robotica", fontsize=13)
@@ -185,9 +144,7 @@ def configurar_graficos():
     return fig, axs, linha_sp, linha_pos, linha_erro, linha_pwm, texto_status
 
 
-# ============================================================
 #  FUNCAO DE ATUALIZACAO DA ANIMACAO
-# ============================================================
 def atualizar(frame, axs, linha_sp, linha_pos, linha_erro, linha_pwm, texto_status):
     with lock:
         t = list(tempo_buf)
@@ -231,9 +188,7 @@ def atualizar(frame, axs, linha_sp, linha_pos, linha_erro, linha_pwm, texto_stat
     return linha_sp, linha_pos, linha_erro, linha_pwm, texto_status
 
 
-# ============================================================
 #  PROGRAMA PRINCIPAL
-# ============================================================
 def main():
     global PORTA_SERIAL
 
